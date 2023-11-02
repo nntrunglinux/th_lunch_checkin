@@ -1,0 +1,8 @@
+__pycache__
+venv
+!app
+!components
+!images
+!ui
+.idea
+TH_LUNCHCHECKIN_TOOL**
