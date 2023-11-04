@@ -1,9 +1,10 @@
-import os
 import threading
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
+import pandas as pd
 
 from PyQt6 import QtGui
-from PyQt6.QtWidgets import QMainWindow, QMessageBox
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QTableWidgetItem
 from PyQt6.uic import loadUi
 
 from constants import *
@@ -19,6 +20,7 @@ QPushButton {
     color: white; 
 """
 DISABLE_CONNECT_BTN = STYLE_BTN + "background: rgba(0, 85, 255, 180);" + "}"
+ENABLE_CONNECT_BTN = STYLE_BTN + "background: rgb(0, 85, 255);" + "}"
 DISABLE_LIVE_CAPTURE_BTN = STYLE_BTN + "background: rgba(220, 53, 69, 180);" + "}"
 ENABLE_LIVE_CAPTURE_BTN = STYLE_BTN + "background: rgba(220, 53, 69, 255);" + "}"
 
@@ -39,6 +41,16 @@ class App(QMainWindow):
         self.live_capture_btn.clicked.connect(self.live_capture)
         self.live_capture_btn.setStyleSheet(DISABLE_LIVE_CAPTURE_BTN)
         self.live_capture_btn.setEnabled(False)
+
+        self.get_lunch_by_condition_btn.clicked.connect(self.get_lunch_by_condition)
+        self.from_dateedit.setDate(datetime.now().date())
+        self.to_dateedit.setDate(datetime.now().date())
+
+        self.lunch_table.setColumnWidth(0, 400)
+        self.lunch_table.setColumnWidth(1, 200)
+        self.lunch_table.setColumnWidth(2, 145)
+
+        self.export_excel_lunch_btn.clicked.connect(self.export_excel)
 
         if self.odoo_sv:
             self.get_devices()
@@ -156,10 +168,7 @@ class App(QMainWindow):
                     self.set_info_and_create_log(log='Đã in phiếu.', **kwargs)
                     continue
 
-                # res = self.odoo_sv.update(HR_LUNCH_DANHSACH_MODEL, [record['id']], {'dain': True})
-                # TODO: test, xóa res=True
-                res = True
-
+                res = self.odoo_sv.update(HR_LUNCH_DANHSACH_MODEL, [record['id']], {'dain': True})
                 if not res:
                     self.set_info_and_create_log(log='In phiếu không thành công.', **kwargs)
                     continue
@@ -187,9 +196,7 @@ class App(QMainWindow):
             manhanvien='',
     ):
         self.set_info(name, machamcong, company, department, log, status)
-
-        # TODO: test, mở comment cho create_log
-        # self.create_log(log, status, log_type, name, manhanvien, machamcong)
+        self.create_log(log, status, log_type, name, manhanvien, machamcong)
 
     def set_info(self, name='', machamcong='', company='', department='', log='', status=''):
         self.name_label.setText(name)
@@ -221,3 +228,112 @@ class App(QMainWindow):
             'machamcong': machamcong
         }
         self.odoo_sv.create(HR_LUNCH_LOGS_MODEL, [data])
+
+    def get_lunch_by_condition(self):
+        self.lunch_status_label.setText('Trạng thái:')
+        self.lunch_status_label.setStyleSheet('color: black;')
+        self.export_excel_lunch_btn.setStyleSheet(DISABLE_LIVE_CAPTURE_BTN)
+        self.export_excel_lunch_btn.setEnabled(False)
+        self.show_loading()
+        thread = threading.Thread(target=self._get_lunch_by_condition)
+        thread.start()
+
+    def _get_lunch_by_condition(self):
+        try:
+            self.lunch_table.setRowCount(0)
+            from_date = self.from_dateedit.date().toPyDate()
+            to_date = self.to_dateedit.date().toPyDate()
+
+            if from_date > to_date:
+                QMessageBox.warning(self, 'Cảnh báo', f'Từ ngày không thể lớn hơn đến ngày.')
+                return
+
+            days_total = (to_date - from_date).days + 1
+            companies = self.odoo_sv.search(RES_COMPANY_MODEL, [], {'fields': ['name']})
+            self.lunch_table.setRowCount(days_total * len(companies))
+            row = 0
+            company_ids = [company['id'] for company in companies]
+            query = [
+                ('ngayan', '>=', from_date.strftime(YMD_FORMAT)),
+                ('ngayan', '<=', to_date.strftime(YMD_FORMAT)),
+                ('company_id', 'in', company_ids),
+                ('dain', '=', True)
+            ]
+            records = self.odoo_sv.search(HR_LUNCH_DANHSACH_MODEL, [query], {'fields': ['ngayan', 'company_id']})
+            self.lunch_total_label.setText(f"Tổng: {str(len(records))}")
+            time.sleep(0.02)
+
+            for day in range(days_total):
+                day_condition = from_date + timedelta(days=day)
+                day_condition_str = day_condition.strftime(YMD_FORMAT)
+                for company in companies:
+                    filtered_records = filter(
+                        lambda r: (r['company_id'][0] == company['id']) and r['ngayan'] == day_condition_str, records
+                    )
+                    filtered_records = list(filtered_records)
+                    if not filtered_records:
+                        continue
+                    total_filtered_records = str(len(filtered_records))
+                    self.lunch_table.setItem(row, 0, QTableWidgetItem(company['name']))
+                    self.lunch_table.setItem(row, 1, QTableWidgetItem(day_condition_str))
+                    self.lunch_table.setItem(row, 2, QTableWidgetItem(total_filtered_records))
+                    time.sleep(0.02)
+                    row += 1
+
+            self.loading_screen.stopAnimation()
+            self.export_excel_lunch_btn.setStyleSheet(ENABLE_LIVE_CAPTURE_BTN)
+            self.export_excel_lunch_btn.setEnabled(True)
+            self.lunch_status_label.setText(f"Trạng thái: lấy dữ liệu thành công.")
+            self.lunch_status_label.setStyleSheet('color: green;')
+
+        except Exception as e:
+            self.loading_screen.stopAnimation()
+            self.export_excel_lunch_btn.setStyleSheet(ENABLE_LIVE_CAPTURE_BTN)
+            self.export_excel_lunch_btn.setEnabled(True)
+            self.lunch_status_label.setText(f"Trạng thái: lấy dữ liệu không thành công. {e}")
+            self.lunch_status_label.setStyleSheet('color: red;')
+
+    def export_excel(self):
+        self.lunch_status_label.setText('Trạng thái:')
+        self.lunch_status_label.setStyleSheet('color: black;')
+        self.get_lunch_by_condition_btn.setStyleSheet(DISABLE_CONNECT_BTN)
+        self.get_lunch_by_condition_btn.setEnabled(False)
+        self.show_loading()
+        thread = threading.Thread(target=self._export_excel)
+        thread.start()
+
+    def _export_excel(self):
+        try:
+            time.sleep(1)
+            row_count = self.lunch_table.rowCount()
+            column_count = 3
+            headers = ['Công ty', 'Ngày ăn', 'Tổng']
+            data = []
+
+            for row in range(row_count):
+                row_data = []
+                for column in range(column_count):
+                    widget_item = self.lunch_table.item(row, column)
+                    if not widget_item or not widget_item.text():
+                        continue
+                    row_data.append(widget_item.text())
+                if row_data:
+                    data.append(row_data)
+
+            if data:
+                df = pd.DataFrame(data)
+                df.to_excel('danh_sach_phan_an.xlsx', header=headers, index=False)
+
+            time.sleep(1)
+            self.loading_screen.stopAnimation()
+            self.get_lunch_by_condition_btn.setStyleSheet(ENABLE_CONNECT_BTN)
+            self.get_lunch_by_condition_btn.setEnabled(True)
+            self.lunch_status_label.setText(f"Trạng thái: xuất excel thành công.")
+            self.lunch_status_label.setStyleSheet('color: green;')
+
+        except Exception as e:
+            self.loading_screen.stopAnimation()
+            self.get_lunch_by_condition_btn.setStyleSheet(ENABLE_CONNECT_BTN)
+            self.get_lunch_by_condition_btn.setEnabled(True)
+            self.lunch_status_label.setText(f"Trạng thái: lỗi trong quá trình xuất excel. {e}")
+            self.lunch_status_label.setStyleSheet('color: red;')

@@ -40,5 +40,4 @@ class Login(QMainWindow):
                 QMessageBox.warning(self, 'Cảnh báo', f'Đăng nhập không thành công.')
 
         except Exception as e:
-
             QMessageBox.critical(self, 'Thất bại', f'Lỗi trong quá trình đăng nhập. \nLỗi: {e}')
