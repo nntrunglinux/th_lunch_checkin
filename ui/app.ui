@@ -696,6 +696,11 @@ QPushButton:pressed {
             <height>16777215</height>
            </size>
           </property>
+          <property name="styleSheet">
+           <string notr="true">QTableWidget {
+	border: 1px solid black;
+}</string>
+          </property>
           <column>
            <property name="text">
             <string>Công ty</string>
