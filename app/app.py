@@ -37,10 +37,7 @@ class App(QMainWindow):
         self.loading_screen = loading.LoadingComponent()
 
         self.setWindowIcon(QtGui.QIcon(os.path.join(IMAGES_DIR, 'icon.ico')))
-        self.connect_btn.clicked.connect(self.connect)
-        self.live_capture_btn.clicked.connect(self.live_capture)
-        self.live_capture_btn.setStyleSheet(DISABLE_LIVE_CAPTURE_BTN)
-        self.live_capture_btn.setEnabled(False)
+        self.connect_btn.clicked.connect(self.connect_and_live_capture)
 
         self.get_lunch_by_condition_btn.clicked.connect(self.get_lunch_by_condition)
         self.from_dateedit.setDate(datetime.now().date())
@@ -88,10 +85,6 @@ class App(QMainWindow):
                 self.zkdevice = connection
                 self.connect_btn.setStyleSheet(DISABLE_CONNECT_BTN)
                 self.connect_btn.setEnabled(False)
-
-                self.live_capture_btn.setEnabled(True)
-                self.live_capture_btn.setStyleSheet(ENABLE_LIVE_CAPTURE_BTN)
-
                 self.device_cb.setEnabled(False)
                 QMessageBox.information(self, 'Thông báo', f'Kết nối thành công.')
 
@@ -122,8 +115,6 @@ class App(QMainWindow):
     def live_capture(self):
         thread = threading.Thread(target=self._live_capture)
         thread.start()
-        self.live_capture_btn.setStyleSheet(DISABLE_LIVE_CAPTURE_BTN)
-        self.live_capture_btn.setEnabled(False)
 
     def _live_capture(self):
         try:
@@ -337,3 +328,9 @@ class App(QMainWindow):
             self.get_lunch_by_condition_btn.setEnabled(True)
             self.lunch_status_label.setText(f"Trạng thái: lỗi trong quá trình xuất excel. {e}")
             self.lunch_status_label.setStyleSheet('color: red;')
+
+    def connect_and_live_capture(self):
+        self.connect()
+        if not self.zkdevice or self.zkdevice is None:
+            return
+        self.live_capture()

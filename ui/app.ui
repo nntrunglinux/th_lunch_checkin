@@ -102,50 +102,6 @@ QPushButton:pressed {
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QPushButton" name="live_capture_btn">
-             <property name="minimumSize">
-              <size>
-               <width>0</width>
-               <height>25</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>100</width>
-               <height>16777215</height>
-              </size>
-             </property>
-             <property name="font">
-              <font>
-               <pointsize>9</pointsize>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="cursor">
-              <cursorShape>PointingHandCursor</cursorShape>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QPushButton {
-	border: none; 
-	border-radius: 5px;
-	color: white;
-	background: rgba(220, 53, 69, 255);
-}
-
-QPushButton:hover { 
-	background: rgba(220, 53, 69, 200);
-}
-
-QPushButton:pressed { 
-	background: rgba(220, 53, 69, 180);
-}</string>
-             </property>
-             <property name="text">
-              <string>Chấm cơm</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </widget>
         </item>

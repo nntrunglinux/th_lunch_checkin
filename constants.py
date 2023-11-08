@@ -1,7 +1,7 @@
 import os
 
-# VERSION 02/11/2023
-VERSION = '2.0.0'
+# VERSION 08/11/2023
+VERSION = '2.0.1'
 APP_DIR = os.path.abspath('app')
 IMAGES_DIR = os.path.abspath('images')
 UI_DIR = os.path.abspath('ui')
@@ -16,3 +16,4 @@ WARNING_STATUS = '1'
 ERROR_STATUS = '2'
 HE_THONG_LOG_TYPE = '0'
 IN_PHIEU_LOG_TYPE = '1'
+LOGIN_JSON_FILE_PATH = os.path.join(os.getcwd(), 'login.json')
