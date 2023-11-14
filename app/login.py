@@ -35,7 +35,8 @@ class Login(QMainWindow):
             if uid:
                 self.write_login_info_from_login_json_file()
                 self.app_window = App(odoosv)
-                self.app_window.show()
+                # self.app_window.show()
+                self.app_window.showMaximized()
                 self.hide()
             else:
                 QMessageBox.warning(self, 'Cảnh báo', f'Đăng nhập không thành công.')

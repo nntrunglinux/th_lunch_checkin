@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 from PyQt6 import QtGui
-from PyQt6.QtWidgets import QMainWindow, QMessageBox, QTableWidgetItem
+from PyQt6.QtWidgets import QMainWindow, QMessageBox, QTableWidgetItem, QVBoxLayout, QGroupBox, QLabel
 from PyQt6.uic import loadUi
 
 from constants import *
@@ -34,6 +34,7 @@ class App(QMainWindow):
         self.devices = {}
         self.zkdevice = None
         self.print_total = 0
+        self.lunch_info_list = []
         self.loading_screen = loading.LoadingComponent()
 
         self.setWindowIcon(QtGui.QIcon(os.path.join(IMAGES_DIR, 'icon.ico')))
@@ -48,6 +49,59 @@ class App(QMainWindow):
         self.lunch_table.setColumnWidth(2, 145)
 
         self.export_excel_lunch_btn.clicked.connect(self.export_excel)
+
+        # LUNCH ITEM 1
+        self.name_info_label1 = QLabel(f"Họ tên: ")
+        self.machamcong_info_label1 = QLabel(f"Mã chấm công: ")
+        self.company_info_label1 = QLabel(f"Công ty: ")
+        self.department_info_label1 = QLabel(f"Phòng ban: ")
+
+        self.lunch_info_item1 = QGroupBox()
+        self.layout1 = QVBoxLayout()
+        self.layout1.addWidget(self.name_info_label1)
+        self.layout1.addWidget(self.machamcong_info_label1)
+        self.layout1.addWidget(self.company_info_label1)
+        self.layout1.addWidget(self.department_info_label1)
+        self.lunch_info_item1.setTitle('Hoàn thành')
+        self.lunch_info_item1.setLayout(self.layout1)
+
+        # LUNCH ITEM 2
+        self.name_info_label2 = QLabel(f"Họ tên: ")
+        self.machamcong_info_label2 = QLabel(f"Mã chấm công: ")
+        self.company_info_label2 = QLabel(f"Công ty: ")
+        self.department_info_label2 = QLabel(f"Phòng ban: ")
+
+        self.lunch_info_item2 = QGroupBox()
+        self.layout2 = QVBoxLayout()
+        self.layout2.addWidget(self.name_info_label2)
+        self.layout2.addWidget(self.machamcong_info_label2)
+        self.layout2.addWidget(self.company_info_label2)
+        self.layout2.addWidget(self.department_info_label2)
+        self.lunch_info_item2.setTitle('Hoàn thành')
+        self.lunch_info_item2.setLayout(self.layout2)
+
+        # LUNCH ITEM 3
+        self.name_info_label3 = QLabel(f"Họ tên: ")
+        self.machamcong_info_label3 = QLabel(f"Mã chấm công: ")
+        self.company_info_label3 = QLabel(f"Công ty: ")
+        self.department_info_label3 = QLabel(f"Phòng ban: ")
+
+        self.lunch_info_item3 = QGroupBox()
+        self.layout3 = QVBoxLayout()
+        self.layout3.addWidget(self.name_info_label3)
+        self.layout3.addWidget(self.machamcong_info_label3)
+        self.layout3.addWidget(self.company_info_label3)
+        self.layout3.addWidget(self.department_info_label3)
+        self.lunch_info_item3.setTitle('Hoàn thành')
+        self.lunch_info_item3.setLayout(self.layout3)
+
+        # LUNCH LIST
+        self.lunch_info_layout.addWidget(self.lunch_info_item1)
+        self.lunch_info_layout.addWidget(self.lunch_info_item2)
+        self.lunch_info_layout.addWidget(self.lunch_info_item3)
+        self.lunch_info_layout.addStretch()
+        self.lunch_info_widget.setLayout(self.lunch_info_layout)
+        self.lunch_info_widget.setStyleSheet("QLabel {font-size: 11pt;}")
 
         if self.odoo_sv:
             self.get_devices()
@@ -123,6 +177,7 @@ class App(QMainWindow):
             zk = self.zkdevice
 
             for attendance in zk.live_capture(90):
+                print(f"connect: {self.zkdevice.is_connect} - end_live_capture: {self.zkdevice.end_live_capture}")
                 if attendance is None:
                     break
                 machamcong = attendance.user_id
@@ -171,6 +226,7 @@ class App(QMainWindow):
 
         except Exception as e:
             self.set_info_and_create_log(log=f"Lỗi: {e}", status=ERROR_STATUS, log_type=HE_THONG_LOG_TYPE)
+            print(f"Loi trong luc xu ly in phieu. Loi: {e}")
         finally:
             self.set_info()
             self._live_capture()
@@ -190,35 +246,56 @@ class App(QMainWindow):
         self.create_log(log, status, log_type, name, manhanvien, machamcong)
 
     def set_info(self, name='', machamcong='', company='', department='', log='', status=''):
-        self.name_label.setText(name)
-        self.machamcong_label.setText(machamcong)
-        self.company_label.setText(company)
-        self.department_label.setText(department)
-        self.log_label.setText(log)
-        if not status:
-            return
-        color = ''
-        if status == SUCCESS_STATUS:
-            color = 'green'
-        if status == WARNING_STATUS:
-            color = '#FFA000'
-        if status == ERROR_STATUS:
-            color = 'red'
-        self.log_label.setStyleSheet(f"color: {color};")
+        try:
+            self.name_label.setText(name)
+            self.machamcong_label.setText(machamcong)
+            self.company_label.setText(company)
+            self.department_label.setText(department)
+            self.log_label.setText(log)
+            if not status:
+                return
+            color = ''
+            status_text = ''
+            if status == SUCCESS_STATUS:
+                color = 'green'
+                status_text = 'Hoàn thành'
+            if status == WARNING_STATUS:
+                color = '#FFA000'
+                status_text = 'Cảnh báo'
+            if status == ERROR_STATUS:
+                color = 'red'
+                status_text = 'Lỗi'
+            self.log_label.setStyleSheet(f"color: {color};")
+
+            self.lunch_info_list = self.lunch_info_list[0:2]
+            self.lunch_info_list.insert(0, {
+                'name': name,
+                'machamcong': machamcong,
+                'company': company,
+                'department': department,
+                'status': status_text,
+                'color': color,
+            })
+            self.add_item_for_lunch_info_list()
+        except Exception as e:
+            raise Exception(f"Loi thiet lap thong tin: {e}")
 
     def create_log(self, log, status, log_type, tennhanvien='', manhanvien='', machamcong=''):
-        now = datetime.now()
-        now_str = utils.convert_to_str_and_minus_7_hour(now)
-        data = {
-            'name': log,
-            'time': now_str,
-            'status': status,
-            'type': log_type,
-            'tennhanvien': tennhanvien,
-            'manhanvien': manhanvien,
-            'machamcong': machamcong
-        }
-        self.odoo_sv.create(HR_LUNCH_LOGS_MODEL, [data])
+        try:
+            now = datetime.now()
+            now_str = utils.convert_to_str_and_minus_7_hour(now)
+            data = {
+                'name': log,
+                'time': now_str,
+                'status': status,
+                'type': log_type,
+                'tennhanvien': tennhanvien,
+                'manhanvien': manhanvien,
+                'machamcong': machamcong
+            }
+            self.odoo_sv.create(HR_LUNCH_LOGS_MODEL, [data])
+        except Exception as e:
+            raise Exception(f"Loi tao log: {e}")
 
     def get_lunch_by_condition(self):
         self.lunch_status_label.setText('Trạng thái:')
@@ -334,3 +411,39 @@ class App(QMainWindow):
         if not self.zkdevice or self.zkdevice is None:
             return
         self.live_capture()
+
+    def add_item_for_lunch_info_list(self):
+        print('add_item_for_lunch_info_list running')
+        if not self.lunch_info_list:
+            return
+        list_length = len(self.lunch_info_list)
+        print(f"List length: {list_length}")
+
+        for i in range(list_length):
+            item = self.lunch_info_list[i]
+            if i == 0:
+                status = item['status']
+                self.name_info_label1.setText(f"Họ tên: {item['name']}")
+                self.machamcong_info_label1.setText(f"Mã chấm công: {item['machamcong']}")
+                self.company_info_label1.setText(f"Công ty: {item['company']}")
+                self.department_info_label1.setText(f"Phòng ban: {item['department']}")
+                self.lunch_info_item1.setStyleSheet(f"color: {item['color']}")
+                self.lunch_info_item1.setTitle(status)
+
+            if i == 1:
+                status = item['status']
+                self.name_info_label2.setText(f"Họ tên: {item['name']}")
+                self.machamcong_info_label2.setText(f"Mã chấm công: {item['machamcong']}")
+                self.company_info_label2.setText(f"Công ty: {item['company']}")
+                self.department_info_label2.setText(f"Phòng ban: {item['department']}")
+                self.lunch_info_item2.setStyleSheet(f"color: {item['color']}")
+                self.lunch_info_item2.setTitle(status)
+
+            if i == 2:
+                status = item['status']
+                self.name_info_label3.setText(f"Họ tên: {item['name']}")
+                self.machamcong_info_label3.setText(f"Mã chấm công: {item['machamcong']}")
+                self.company_info_label3.setText(f"Công ty: {item['company']}")
+                self.department_info_label3.setText(f"Phòng ban: {item['department']}")
+                self.lunch_info_item3.setStyleSheet(f"color: {item['color']}")
+                self.lunch_info_item3.setTitle(status)
